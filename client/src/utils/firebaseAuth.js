@@ -8,14 +8,14 @@ import {
 import { initializeApp } from 'firebase/app';
 import { API_BASE_URL } from './config.js';
 
-// TODO: Replace with Real Firebase Config later
+// Firebase config for project: ecstatic-parsec-460011-q6
 const firebaseConfig = {
-    apiKey: "PLACEHOLDER_API_KEY",
-    authDomain: "PLACEHOLDER_AUTH_DOMAIN",
-    projectId: "PLACEHOLDER_PROJECT_ID",
-    storageBucket: "PLACEHOLDER_STORAGE_BUCKET",
-    messagingSenderId: "PLACEHOLDER_SENDER_ID",
-    appId: "PLACEHOLDER_APP_ID"
+    apiKey: "AIzaSyCSp0StrDJd-1Xbcqln0S3wgw5n3THXdNg",
+    authDomain: "ecstatic-parsec-460011-q6.firebaseapp.com",
+    projectId: "ecstatic-parsec-460011-q6",
+    storageBucket: "ecstatic-parsec-460011-q6.firebasestorage.app",
+    messagingSenderId: "349242512660",
+    appId: "1:349242512660:web:9c16545750501847acde01"
 };
 
 let app, auth;
