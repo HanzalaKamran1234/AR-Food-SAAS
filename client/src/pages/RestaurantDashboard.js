@@ -123,7 +123,7 @@ const bindEvents = () => {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    name, description, price, imageUrl, modelUrl
+                    name, description: desc, price, imageUrl, modelUrl
                 })
             });
 
@@ -173,7 +173,7 @@ const loadMenu = async () => {
             <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-100 flex flex-col">
                 <div class="h-48 bg-gray-200 relative overflow-hidden">
                     <!-- The actual preview image goes here -->
-                    <img src="${item.imageUrl === 'https://dummy-storage.com/images/thumb1.jpg' || item.imageUrl.includes('dummy-storage') ? 'https://via.placeholder.com/400x300?text=3D+Model+Preview' : item.imageUrl}" class="w-full h-full object-cover" alt="${item.name}">
+                    <img src="${item.imageUrl && item.imageUrl.startsWith('http') ? item.imageUrl : 'https://placehold.co/400x300?text=Food+Preview'}" class="w-full h-full object-cover" alt="${item.name}">
                     <div class="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs font-bold">
                         $${item.price.toFixed(2)}
                     </div>

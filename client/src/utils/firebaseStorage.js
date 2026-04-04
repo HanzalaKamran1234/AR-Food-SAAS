@@ -1,52 +1,59 @@
-import { getStorage, ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+/**
+ * Cloudinary Upload Utility (replaces Firebase Storage — 100% FREE)
+ * 
+ * Setup (2 min):
+ * 1. Go to https://cloudinary.com/users/register_free → sign up free
+ * 2. Dashboard → copy your "Cloud Name"
+ * 3. Settings → Upload → Upload presets → Add preset:
+ *    - Name: ar_food_uploads
+ *    - Signing Mode: Unsigned
+ *    - Save
+ * 4. Replace YOUR_CLOUD_NAME below with your real cloud name
+ */
 
-let storage;
-
-try {
-    storage = getStorage();
-} catch (err) {
-    console.warn("Firebase Storage missing configuration. Uploads will run in mock mode.");
-}
+const CLOUDINARY_CLOUD_NAME = 'YOUR_CLOUD_NAME'; // ← REPLACE THIS
+const CLOUDINARY_UPLOAD_PRESET = 'ar_food_uploads';
 
 /**
- * Uploads a file to Firebase Storage and returns the public download URL
+ * Uploads a file to Cloudinary and returns the public download URL
  * @param {File} file - The file object from an input type="file"
- * @param {string} path - The storage path (e.g., 'models/food1.glb' or 'images/thumb1.jpg')
+ * @param {string} path - Used as a folder prefix (e.g. 'models' or 'images')
  * @param {Function} onProgress - Optional callback for upload progress (0-100)
  */
 export const uploadFileToStorage = async (file, path, onProgress = null) => {
-    if (!storage) {
-        // Mock mode for local testing without Firebase Keys
-        console.warn(`[MOCK MODE] Simulating upload for ${file.name} to ${path}`);
-        return new Promise((resolve) => {
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += 25;
-                if (onProgress) onProgress(progress);
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    // Return a fake blob URL or dummy URL
-                    resolve(`https://dummy-storage.com/${path}`);
-                }
-            }, 500);
-        });
-    }
+    // Extract folder from path (e.g. 'images/timestamp_file.jpg' → folder='images')
+    const folder = path.split('/')[0];
 
-    const storageRef = ref(storage, path);
-    const uploadTask = uploadBytesResumable(storageRef, file);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+    formData.append('folder', `ar_food/${folder}`);
 
     return new Promise((resolve, reject) => {
-        uploadTask.on(
-            'state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                if (onProgress) onProgress(progress);
-            },
-            (error) => reject(error),
-            async () => {
-                const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                resolve(downloadURL);
+        const xhr = new XMLHttpRequest();
+
+        // Track upload progress
+        xhr.upload.addEventListener('progress', (event) => {
+            if (event.lengthComputable && onProgress) {
+                const percent = Math.round((event.loaded / event.total) * 100);
+                onProgress(percent);
             }
-        );
+        });
+
+        xhr.addEventListener('load', () => {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                resolve(response.secure_url);
+            } else {
+                reject(new Error(`Cloudinary upload failed: ${xhr.statusText}`));
+            }
+        });
+
+        xhr.addEventListener('error', () => {
+            reject(new Error('Network error during upload'));
+        });
+
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`);
+        xhr.send(formData);
     });
 };
