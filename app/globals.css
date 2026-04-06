@@ -1,6 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-orange-500: #f97316;
+  --color-red-600: #dc2626;
+  --background-white-70: rgba(255, 255, 255, 0.7);
+  --background-black-40: rgba(0, 0, 0, 0.4);
+}
 
 :root {
   --background: #ffffff;
@@ -21,28 +26,32 @@ body {
 }
 
 /* Premium Utilities */
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-  
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-red-600;
-  }
-
-  .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
-  }
-
-  .dark-glass-card {
-    @apply bg-black/40 backdrop-blur-xl border border-white/10 shadow-2xl;
-  }
+@utility text-balance {
+  text-wrap: balance;
 }
 
-@layer base {
-  html {
-    scroll-behavior: smooth;
-  }
+@utility text-gradient {
+  background-clip: text;
+  color: transparent;
+  background-image: linear-gradient(to right, var(--color-orange-500), var(--color-red-600));
+}
+
+@utility glass-card {
+  background-color: var(--background-white-70);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+@utility dark-glass-card {
+  background-color: var(--background-black-40);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 /* Custom Scrollbar */
