@@ -27,6 +27,14 @@ const foodItemSchema = new mongoose.Schema({
     imageUrl: {
         type: String,
         required: true
+    },
+    viewCount: {
+        type: Number,
+        default: 0
+    },
+    arInteractions: {
+        type: Number,
+        default: 0
     }
 }, { timestamps: true });
 

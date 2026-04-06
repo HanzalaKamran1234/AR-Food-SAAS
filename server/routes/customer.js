@@ -41,4 +41,22 @@ router.get('/restaurants/:id/items', verifyAuth, async (req, res) => {
     }
 });
 
+// Track analytics
+router.post('/items/track', async (req, res) => {
+    try {
+        const { modelUrl, type } = req.body;
+        // Tracking can be anonymous (for customers) or linked if we had customer accounts
+        const item = await FoodItem.findOne({ modelUrl });
+        if (item) {
+            if (type === 'view') item.viewCount += 1;
+            if (type === 'interaction') item.arInteractions += 1;
+            await item.save();
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Track Error:', err);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+});
+
 module.exports = router;

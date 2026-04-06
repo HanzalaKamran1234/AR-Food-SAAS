@@ -98,6 +98,9 @@ class ARManager {
         // Start Loop
         this.renderer.setAnimationLoop(this.render.bind(this));
 
+        // Increment View Count in Backend
+        this.incrementAnalytics(modelUrl, 'view');
+
         hideARLoading();
         // At this point, the user will see the browser's native "Enter AR" button created by ARButton
         
@@ -106,6 +109,21 @@ class ARManager {
             this.dispose();
         });
     }
+
+    async incrementAnalytics(modelUrl, type) {
+        try {
+            // Find item by modelUrl (simplified lookup)
+            // In a more robust system, we would pass the itemId directly to initAR
+            await fetch(`${API_BASE_URL}/api/customer/items/track`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ modelUrl, type })
+            });
+        } catch (e) {
+            console.warn("Analytics tracking failed", e);
+        }
+    }
+
 
     async loadModel(url) {
         return new Promise((resolve, reject) => {
@@ -228,6 +246,8 @@ class ARManager {
         if(newScale > 0.05 && newScale < 1.0) {
             this.placedObject.scale.multiplyScalar(factor);
             this.broadcastState();
+            // Track interaction
+            this.incrementAnalytics(null, 'interaction');
         }
     }
 
@@ -235,7 +255,10 @@ class ARManager {
         if (!this.placedObject) return;
         this.placedObject.rotation.y += radians;
         this.broadcastState();
+        // Track interaction
+        this.incrementAnalytics(null, 'interaction');
     }
+
 
     resetObject() {
         if (!this.placedObject || !this.initialPos) return;
