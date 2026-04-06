@@ -19,8 +19,10 @@ export default function ARViewerPage() {
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    loadARData();
-    setupPusher();
+    if (id) {
+      loadARData();
+      setupPusher();
+    }
     return () => {
       if (channelRef.current) {
         channelRef.current.unbind_all();
@@ -30,9 +32,9 @@ export default function ARViewerPage() {
   }, [id]);
 
   const loadARData = async () => {
+    if (!id) return;
     try {
       // 1. Fetch Item Data (Public Route)
-      // Note: We need a public endpoint for customers to see the AR model
       const res = await fetch(`/api/customer/items/${id}`);
       if (!res.ok) throw new Error("Food item not found.");
       
@@ -40,6 +42,7 @@ export default function ARViewerPage() {
       setItem(data.item);
       setProfile(data.profile);
     } catch (err) {
+      console.error("AR Load Error:", err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -47,10 +50,11 @@ export default function ARViewerPage() {
   };
 
   const setupPusher = () => {
+    if (!id) return;
     // We use a simplified AR session ID based on the item ID 
-    // or a shared room code if we wanted true multiplayer.
-    // For now, we'll listen for sync events on this item's specific channel.
     const pusher = getPusherClient();
+    if (!pusher) return; // Skip if pusher not configured
+    
     pusherRef.current = pusher;
 
     const channel = pusher.subscribe(`ar-session-${id}`);
@@ -59,8 +63,6 @@ export default function ARViewerPage() {
     channel.bind('sync-state', (data) => {
       if (!isSyncing && modelViewerRef.current) {
         const { state } = data;
-        // In model-viewer, we can sync rotation, scale, etc.
-        // For simple MVP sync:
         if (state.cameraOrbit) {
           modelViewerRef.current.cameraOrbit = state.cameraOrbit;
         }
