@@ -66,10 +66,12 @@ const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
 const restaurantRoutes = require('./routes/restaurant');
 const customerRoutes = require('./routes/customer');
+const billingRoutes = require('./routes/billing');
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/restaurant', restaurantRoutes);
 app.use('/api/customer', customerRoutes);
+app.use('/api/billing', billingRoutes);
 
 // Basic Route for testing
 app.get('/api/health', (req, res) => {

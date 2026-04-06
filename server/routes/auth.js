@@ -18,9 +18,9 @@ router.post('/register', async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Enforce valid role
+        // Enforce valid role - Default to Restaurant for our SaaS model
         const validRoles = ['Admin', 'Restaurant', 'Customer'];
-        const assignedRole = validRoles.includes(role) ? role : 'Customer';
+        const assignedRole = validRoles.includes(role) ? role : 'Restaurant';
 
         const newUser = new User({
             firebaseUid,

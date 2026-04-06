@@ -1,36 +1,48 @@
 import './style.css';
 import { subscribeToAuthChanges } from './utils/firebaseAuth.js';
+import { renderLandingPage } from './pages/LandingPage.js';
 import { renderAuth } from './pages/Auth.js';
 import { renderDashboard } from './pages/Dashboard.js';
+import { renderCheckout } from './pages/Checkout.js';
 
 const appContainer = document.getElementById('app');
 
 // State manager to determine which page to render
 const initApp = () => {
-    appContainer.innerHTML = `
-        <div class="min-h-screen flex items-center justify-center bg-gray-50">
-            <span class="text-2xl font-bold text-blue-500 animate-bounce">Initializing Firebase...</span>
-        </div>
-    `;
+    // Basic Hash-based router
+    const handleRoute = (user) => {
+        const hash = window.location.hash;
+        
+        if (user) {
+            if (hash === '#checkout') {
+                renderCheckout(appContainer);
+            } else {
+                // User is signed in, load Dashboard
+                renderDashboard(appContainer, user);
+            }
+        } else {
+            if (hash === '#login' || hash === '#register') {
+                renderAuth(appContainer, hash === '#register');
+            } else {
+                renderLandingPage(appContainer);
+            }
+        }
+    };
 
     // Listen to Firebase auth state
-    // Note: Due to placeholder credentials, this might not trigger perfectly, 
-    // but the logic is production-ready for when credentials are added.
     subscribeToAuthChanges((user) => {
-        if (user) {
-            // User is signed in, load Dashboard
-            renderDashboard(appContainer, user);
-        } else {
-            // No user is signed in, load Auth forms
-            renderAuth(appContainer);
-        }
+        handleRoute(user);
     });
 
-    // Fallback if Firebase is not configured at all (to prevent blank screen)
+    window.addEventListener('hashchange', () => {
+        // Force re-auth if no user
+        initApp(); 
+    });
+
+    // Fallback if Firebase is slow
     setTimeout(() => {
         if(appContainer.innerHTML.includes('Initializing Firebase...')) {
-            console.warn("Auth initialization took too long. Likely missing credentials. Rendering Auth UI fallback.");
-            renderAuth(appContainer);
+            renderLandingPage(appContainer);
         }
     }, 2000);
 };

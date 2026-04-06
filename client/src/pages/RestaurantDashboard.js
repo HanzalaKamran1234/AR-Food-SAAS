@@ -64,17 +64,31 @@ export const renderRestaurantDashboard = async (container) => {
             </div>
 
             <div id="viewBilling" class="hidden space-y-6">
-                 <div class="bg-gradient-to-r from-orange-500 to-red-600 p-8 rounded-2xl text-white shadow-xl">
-                    <h3 class="text-2xl font-bold mb-2">Upgrade to Pro</h3>
-                    <p class="mb-6 opacity-90">Get custom branding, unlimited items, and priority AR support.</p>
-                    <ul class="space-y-2 mb-8">
-                        <li class="flex items-center"><span class="mr-2">✅</span> Unlimited 3D Models</li>
-                        <li class="flex items-center"><span class="mr-2">✅</span> Custom Branding & Logo</li>
-                        <li class="flex items-center"><span class="mr-2">✅</span> Advanced Analytics</li>
-                    </ul>
-                    <button class="bg-white text-orange-600 font-extrabold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 transition">
-                        Select Pro - $49/mo
-                    </button>
+                 <div id="billingProCard" class="bg-gradient-to-r from-orange-500 to-red-600 p-10 rounded-3xl text-white shadow-2xl relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-10 rounded-full"></div>
+                    <div class="relative z-10">
+                        <h3 class="text-3xl font-black mb-2">Upgrade to Pro</h3>
+                        <p class="mb-8 opacity-90 text-lg">Unleash the full power of AR for your restaurant.</p>
+                        <ul class="space-y-3 mb-10 text-sm font-bold">
+                            <li class="flex items-center"><span class="bg-white/20 p-1 rounded-full mr-3 text-xs">✓</span> Unlimited 3D Food Models</li>
+                            <li class="flex items-center"><span class="bg-white/20 p-1 rounded-full mr-3 text-xs">✓</span> Custom Brand Colors & Logo</li>
+                            <li class="flex items-center"><span class="bg-white/20 p-1 rounded-full mr-3 text-xs">✓</span> Advanced AR Interaction Analytics</li>
+                            <li class="flex items-center"><span class="bg-white/20 p-1 rounded-full mr-3 text-xs">✓</span> Priority Support & 3D Optimization</li>
+                        </ul>
+                        <button id="upgradeToProBtn" class="bg-white text-orange-600 font-black py-4 px-10 rounded-full shadow-xl hover:bg-orange-50 transition transform hover:-translate-y-1 active:scale-95">
+                            Upgrade Now - $49/mo
+                        </button>
+                    </div>
+                 </div>
+                 
+                 <div id="billingActiveCard" class="hidden bg-gray-900 p-10 rounded-3xl text-white shadow-2xl border-4 border-orange-500">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-2xl font-black mb-1">Pro Plan Active</h3>
+                            <p class="text-gray-400 text-sm">Your account is fully unlocked.</p>
+                        </div>
+                        <span class="bg-green-500 text-white px-4 py-1 rounded-full text-xs font-black uppercase tracking-widest">Active</span>
+                    </div>
                  </div>
             </div>
         </div>
@@ -199,6 +213,12 @@ const bindEvents = () => {
     tabs.Analytics.addEventListener('click', () => switchTab('Analytics'));
     tabs.Settings.addEventListener('click', () => switchTab('Settings'));
     tabs.Billing.addEventListener('click', () => switchTab('Billing'));
+
+    document.getElementById('upgradeToProBtn').addEventListener('click', () => {
+        window.location.hash = '#checkout';
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+    });
+
 
     // AI Suggestion Trigger
     const aiContainer = document.getElementById('aiSuggestionsContainer');
@@ -463,11 +483,30 @@ const loadAnalytics = async () => {
 };
 
 const loadSettings = async () => {
+    const form = document.getElementById('settingsForm');
+    
     try {
         const token = await getAuthToken();
+        
+        // 1. Check Subscription Status first
+        const statusRes = await fetch(`${API_BASE_URL}/api/billing/status`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const { status } = await statusRes.json();
+        
+        const isPro = status === 'pro';
+        
+        // Update Billing UI
+        if (isPro) {
+            document.getElementById('billingProCard').classList.add('hidden');
+            document.getElementById('billingActiveCard').classList.remove('hidden');
+        }
+
+        // 2. Load Profile
         const response = await fetch(`${API_BASE_URL}/api/restaurant/profile`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
+        
         if (response.ok) {
             const { profile } = await response.json();
             document.getElementById('settingsName').value = profile.name || '';
@@ -476,11 +515,23 @@ const loadSettings = async () => {
             
             // Apply branding color to dashboard title
             document.getElementById('dashboardTitle').style.color = profile.brandingColor;
+
+            // GATE THE SETTINGS
+            if (!isPro) {
+                const inputs = form.querySelectorAll('input');
+                inputs.forEach(i => i.disabled = true);
+                const submit = form.querySelector('button');
+                submit.disabled = true;
+                submit.innerText = "⭐ Upgrade to Pro to Change Branding";
+                submit.classList.remove('bg-blue-600');
+                submit.classList.add('bg-gray-400');
+            }
         }
     } catch (err) {
         console.error("Settings load error", err);
     }
 };
+
 
 const saveSettings = async () => {
     try {
