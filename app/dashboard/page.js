@@ -203,12 +203,27 @@ export default function DashboardPage() {
             <div className="space-y-6">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-black text-gray-900">Your Menu</h2>
-                <button 
-                  onClick={() => setIsModalOpen(true)}
-                  className="bg-orange-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-orange-700 transition shadow-lg"
-                >
-                  + Add Item
-                </button>
+                <div className="flex space-x-3">
+                  <button 
+                    onClick={async () => {
+                      if(confirm("This will add sample dishes to your menu. Continue?")) {
+                        const res = await fetch('/api/seed');
+                        const data = await res.json();
+                        alert(data.message || data.error);
+                        loadDashboardData(user);
+                      }
+                    }}
+                    className="bg-gray-900 text-white px-4 py-2.5 rounded-xl text-xs font-black uppercase hover:bg-black transition shadow-sm"
+                  >
+                    🌱 Seed Data
+                  </button>
+                  <button 
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-orange-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-orange-700 transition shadow-lg"
+                  >
+                    + Add Item
+                  </button>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
