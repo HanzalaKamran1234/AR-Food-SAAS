@@ -10,10 +10,12 @@ export async function POST(req) {
     }
 
     // Trigger Pusher event for the specific session
-    await pusherServer.trigger(`ar-session-${sessionId}`, 'sync-state', {
-      state,
-      timestamp: Date.now()
-    });
+    if (pusherServer) {
+        await pusherServer.trigger(`ar-session-${sessionId}`, 'sync-state', {
+            state,
+            timestamp: Date.now()
+        });
+    }
 
     return NextResponse.json({ message: 'Sync successful' });
   } catch (err) {
