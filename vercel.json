@@ -1,4 +1,5 @@
 {
+  "name": "ar-food-saas",
   "framework": "nextjs",
   "buildCommand": "next build",
   "installCommand": "npm install",
