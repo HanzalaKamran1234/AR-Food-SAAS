@@ -2,8 +2,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { subscribeToAuth, logoutUser } from '@/lib/authActions';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { storage } from '@/lib/firebaseClient';
 import { QRCodeSVG } from 'qrcode.react';
 
 // Mock AI logic
@@ -115,32 +113,58 @@ export default function DashboardPage() {
     }
   };
 
-  const uploadToFirebase = (file, path) => {
-    return new Promise((resolve, reject) => {
-      const storageRef = ref(storage, path);
-      const uploadTask = uploadBytesResumable(storageRef, file);
-      
-      // 30-second timeout to prevent infinite hanging if Firebase rules block upload
-      const timeoutId = setTimeout(() => {
-        uploadTask.cancel();
-        reject(new Error('Upload timed out. Please check your Firebase Storage Rules (they might be denying write access) or your internet connection.'));
-      }, 30000);
+  const uploadToCloudinary = async (file, folder, resourceType = 'auto') => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // 1. Get Signature & Keys
+        const sigRes = await fetch('/api/upload/signature', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ folder })
+        });
+        
+        if (!sigRes.ok) throw new Error('Failed to get secure upload signature');
+        const { signature, timestamp, cloudName, apiKey } = await sigRes.json();
 
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (error) => {
-          clearTimeout(timeoutId);
-          reject(error);
-        },
-        () => {
-          clearTimeout(timeoutId);
-          getDownloadURL(uploadTask.snapshot.ref).then(resolve);
-        }
-      );
+        // 2. Prepare FormData for direct Cloudinary upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', apiKey);
+        formData.append('timestamp', timestamp);
+        formData.append('signature', signature);
+        formData.append('folder', folder);
+
+        // 3. Upload using XMLHttpRequest to get progress events
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`);
+
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const progress = (e.loaded / e.total) * 100;
+            setUploadProgress(progress);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const response = JSON.parse(xhr.responseText);
+            resolve(response.secure_url);
+          } else {
+            console.error('Cloudinary Upload Error:', xhr.responseText);
+            reject(new Error('Failed to upload file to Cloudinary.'));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error('Network error occurred during file upload.'));
+        
+        // 30 second timeout
+        xhr.timeout = 30000;
+        xhr.ontimeout = () => reject(new Error('Upload timed out. Check your internet connection.'));
+
+        xhr.send(formData);
+      } catch (err) {
+        reject(err);
+      }
     });
   };
 
@@ -170,10 +194,12 @@ export default function DashboardPage() {
       const token = await user.getIdToken();
 
       setUploadStep('Uploading preview image...');
-      const imageUrl = await uploadToFirebase(imageFile, `images/${user.uid}/${Date.now()}_img`);
+      // Images go to image endpoint
+      const imageUrl = await uploadToCloudinary(imageFile, `ar_saas/images/${user.uid}`, 'image');
 
       setUploadStep('Uploading 3D model...');
-      const modelUrl = await uploadToFirebase(modelFile, `models/${user.uid}/${Date.now()}_model`);
+      // 3D models go to raw or auto. For .glb/.gltf, Cloudinary prefers raw usually but auto is safer.
+      const modelUrl = await uploadToCloudinary(modelFile, `ar_saas/models/${user.uid}`, 'auto');
 
       setUploadStep('Saving to database...');
       const res = await fetch('/api/restaurant/menu', {
