@@ -117,22 +117,32 @@ export default function DashboardPage() {
     return new Promise(async (resolve, reject) => {
       try {
         // 1. Get Signature & Keys
-        const sigRes = await fetch('/api/upload/signature', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ folder })
-        });
+        console.log(`[Upload Trace] Fetching signature for folder: ${folder}...`);
+        let sigRes;
+        try {
+          sigRes = await fetch('/api/upload/signature', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ folder })
+          });
+        } catch (fetchErr) {
+          console.error('[Upload Trace] Fetch API Error:', fetchErr);
+          throw new Error(`Connection Error: Could not reach the signature server. (${fetchErr.message})`);
+        }
         
-        if (!sigRes.ok) throw new Error('Failed to get secure upload signature');
+        if (!sigRes.ok) {
+          const errorData = await sigRes.json().catch(() => ({}));
+          throw new Error(`Server Error: Failed to get signature (Status: ${sigRes.status}). ${errorData.error || ''}`);
+        }
+        
         const { signature, timestamp, cloudName, apiKey } = await sigRes.json();
 
-        // 2. Prepare FormData for direct Cloudinary upload
-        console.log('--- Upload Debug ---');
-        console.log('Sending to Cloud:', cloudName);
-        console.log('Using API Key:', apiKey);
-        console.log('Resource Type:', resourceType);
-        console.log('---------------------');
+        if (!cloudName || !apiKey) {
+          throw new Error('Config Error: Cloudinary configuration is missing on the server.');
+        }
 
+        // 2. Prepare FormData for direct Cloudinary upload
+        console.log('[Upload Trace] Sending to Cloudinary:', cloudName);
         const formData = new FormData();
         formData.append('file', file);
         formData.append('api_key', apiKey);
@@ -166,14 +176,21 @@ export default function DashboardPage() {
           }
         };
 
-        xhr.onerror = () => reject(new Error('Network error occurred during file upload.'));
+        xhr.onerror = () => {
+          console.error('[Upload Trace] Network error during Cloudinary upload.');
+          reject(new Error('Network Error: Could not reach Cloudinary servers. Please check your internet.'));
+        };
         
         // 30 second timeout
         xhr.timeout = 30000;
-        xhr.ontimeout = () => reject(new Error('Upload timed out. Check your internet connection.'));
+        xhr.ontimeout = () => {
+          console.error('[Upload Trace] Cloudinary upload timeout.');
+          reject(new Error('Timeout Error: Upload to Cloudinary took too long.'));
+        };
 
         xhr.send(formData);
       } catch (err) {
+        console.error('[Upload Trace] Caught Error:', err);
         reject(err);
       }
     });
