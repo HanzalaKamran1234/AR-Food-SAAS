@@ -26,7 +26,7 @@ export async function POST(request) {
 
     const signature = cloudinary.utils.api_sign_request(
       signatureParams,
-      process.env.CLOUDINARY_API_SECRET
+      (process.env.CLOUDINARY_API_SECRET || '').trim()
     );
 
     return NextResponse.json({ 
