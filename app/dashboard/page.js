@@ -151,7 +151,12 @@ export default function DashboardPage() {
             resolve(response.secure_url);
           } else {
             console.error('Cloudinary Upload Error:', xhr.responseText);
-            reject(new Error('Failed to upload file to Cloudinary.'));
+            try {
+              const res = JSON.parse(xhr.responseText);
+              reject(new Error(res.error?.message || 'Failed to upload file to Cloudinary.'));
+            } catch (e) {
+              reject(new Error('Failed to upload file to Cloudinary.'));
+            }
           }
         };
 
