@@ -119,14 +119,25 @@ export default function DashboardPage() {
     return new Promise((resolve, reject) => {
       const storageRef = ref(storage, path);
       const uploadTask = uploadBytesResumable(storageRef, file);
+      
+      // 30-second timeout to prevent infinite hanging if Firebase rules block upload
+      const timeoutId = setTimeout(() => {
+        uploadTask.cancel();
+        reject(new Error('Upload timed out. Please check your Firebase Storage Rules (they might be denying write access) or your internet connection.'));
+      }, 30000);
+
       uploadTask.on(
         'state_changed',
         (snapshot) => {
           const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
           setUploadProgress(progress);
         },
-        (error) => reject(error),
+        (error) => {
+          clearTimeout(timeoutId);
+          reject(error);
+        },
         () => {
+          clearTimeout(timeoutId);
           getDownloadURL(uploadTask.snapshot.ref).then(resolve);
         }
       );
@@ -139,6 +150,18 @@ export default function DashboardPage() {
       setErrorMsg('Please select both an image and a 3D model file.');
       return;
     }
+
+    // Strict validation
+    if (!imageFile.type.startsWith('image/')) {
+      setErrorMsg('Preview image must be a valid image file (JPG, PNG, WebP).');
+      return;
+    }
+    const modelName = modelFile.name.toLowerCase();
+    if (!modelName.endsWith('.glb') && !modelName.endsWith('.gltf')) {
+      setErrorMsg('3D model must be a .glb or .gltf file. ZIP files are not supported.');
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
     setErrorMsg('');

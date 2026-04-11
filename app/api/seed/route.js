@@ -25,7 +25,7 @@ export async function GET() {
         description: "A premium beef patty topped with shaved black truffles, aged cheddar, and caramelized onions on a brioche bun.",
         price: 18.99,
         imageUrl: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1000&auto=format&fit=crop",
-        modelUrl: "https://modelviewer.dev/shared-assets/models/glTF-Sample-Assets/burger.glb", // Using a working sample GLB
+        modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Avocado/glTF-Binary/Avocado.glb", // Using reliable Khronos Avocado model
         viewCount: 124,
         arInteractions: 45
       },
@@ -35,7 +35,7 @@ export async function GET() {
         description: "Freshly smashed avocado, poached eggs, and chili flakes on artisan sourdough bread.",
         price: 14.50,
         imageUrl: "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=1000&auto=format&fit=crop",
-        modelUrl: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", // Placeholder for variety
+        modelUrl: "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Avocado/glTF-Binary/Avocado.glb", // Reliable GLB link
         viewCount: 89,
         arInteractions: 22
       }
