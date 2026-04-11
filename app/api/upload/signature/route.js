@@ -2,9 +2,9 @@ import { v2 as cloudinary } from 'cloudinary';
 import { NextResponse } from 'next/server';
 
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: (process.env.CLOUDINARY_CLOUD_NAME || '').trim(),
+  api_key: (process.env.CLOUDINARY_API_KEY || '').trim(),
+  api_secret: (process.env.CLOUDINARY_API_SECRET || '').trim(),
   secure: true,
 });
 
@@ -33,8 +33,8 @@ export async function POST(request) {
       timestamp, 
       signature, 
       folder: signatureParams.folder,
-      cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-      apiKey: process.env.CLOUDINARY_API_KEY
+      cloudName: (process.env.CLOUDINARY_CLOUD_NAME || '').trim(),
+      apiKey: (process.env.CLOUDINARY_API_KEY || '').trim()
     });
   } catch (error) {
     console.error('Signature Generation Error:', error);
