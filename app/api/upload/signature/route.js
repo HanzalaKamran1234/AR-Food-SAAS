@@ -13,6 +13,11 @@ export async function POST(request) {
     const { folder } = await request.json();
     const timestamp = Math.round(new Date().getTime() / 1000);
     
+    console.log('--- Signature API Debug ---');
+    console.log('Cloud Name:', process.env.CLOUDINARY_CLOUD_NAME);
+    console.log('API Key:', process.env.CLOUDINARY_API_KEY);
+    console.log('---------------------------');
+    
     // Cloudinary signature parameters. Must match what the client sends.
     const signatureParams = {
       timestamp: timestamp,

@@ -127,6 +127,12 @@ export default function DashboardPage() {
         const { signature, timestamp, cloudName, apiKey } = await sigRes.json();
 
         // 2. Prepare FormData for direct Cloudinary upload
+        console.log('--- Upload Debug ---');
+        console.log('Sending to Cloud:', cloudName);
+        console.log('Using API Key:', apiKey);
+        console.log('Resource Type:', resourceType);
+        console.log('---------------------');
+
         const formData = new FormData();
         formData.append('file', file);
         formData.append('api_key', apiKey);
