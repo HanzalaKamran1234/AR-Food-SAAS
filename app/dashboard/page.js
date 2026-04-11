@@ -214,6 +214,19 @@ export default function DashboardPage() {
       return;
     }
 
+    // File size validation (Max 20MB for 3D models)
+    if (modelFile.size > 20 * 1024 * 1024) {
+      setErrorMsg('3D model is too large (Max 20MB). Please optimize your model for mobile.');
+      return;
+    }
+
+    // Warning for medium-size models
+    if (modelFile.size > 10 * 1024 * 1024) {
+      if (!confirm('This 3D model is over 10MB and may take a long time to download on mobile. Continue?')) {
+        return;
+      }
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
     setErrorMsg('');

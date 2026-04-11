@@ -9,9 +9,12 @@ export default function ARViewerPage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [modelLoading, setModelLoading] = useState(true);
+  const [modelError, setModelError] = useState(false);
+  const [showRetry, setShowRetry] = useState(false);
   const [error, setError] = useState('');
   const [scriptReady, setScriptReady] = useState(false);
   const modelViewerRef = useRef(null);
+  const [debugInfo, setDebugInfo] = useState(null);
 
   // Step 1: Dynamically load the model-viewer script ONCE
   useEffect(() => {
@@ -42,6 +45,13 @@ export default function ARViewerPage() {
         const data = await res.json();
         setItem(data.item);
         setProfile(data.profile);
+        
+        // Setup a timeout for "slow network" warning
+        const timer = setTimeout(() => {
+          if (modelLoading) setShowRetry(true);
+        }, 15000); // 15 seconds
+
+        return () => clearTimeout(timer);
       } catch (err) {
         console.error('AR Load Error:', err);
         setError(err.message);
@@ -50,7 +60,7 @@ export default function ARViewerPage() {
       }
     };
     loadARData();
-  }, [id]);
+  }, [id, modelLoading]);
 
   // Handle AR button click — triggers model-viewer's built-in AR launch
   const handleARClick = () => {
@@ -133,19 +143,57 @@ export default function ARViewerPage() {
             display: 'block',
             backgroundColor: 'transparent',
           }}
-          onLoad={() => setModelLoading(false)}
+          onLoad={() => {
+            console.log('[AR Trace] Model loaded successfully');
+            setModelLoading(false);
+            setModelError(false);
+          }}
+          onError={(e) => {
+            console.error('[AR Trace] Model load failed:', e);
+            setModelError(true);
+            setModelLoading(false);
+            setDebugInfo(item.modelUrl);
+          }}
           suppressHydrationWarning
         />
       )}
 
       {/* ── Loading overlay while 3D model downloads ── */}
-      {(modelLoading || !scriptReady) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black z-10 pointer-events-none">
-          <div className="text-center space-y-4">
-            <div className="w-16 h-16 border-t-4 border-orange-500 border-solid rounded-full animate-spin mx-auto" />
-            <p className="text-white/60 text-xs font-bold uppercase tracking-widest">
-              {!scriptReady ? 'Loading AR Engine...' : 'Downloading 3D Model...'}
-            </p>
+      {(modelLoading || !scriptReady || modelError) && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black z-10 p-8">
+          <div className="text-center space-y-6 max-w-xs">
+            {modelError ? (
+              <>
+                <div className="text-4xl">⚠️</div>
+                <h2 className="text-white text-lg font-black uppercase">Load Failed</h2>
+                <p className="text-white/40 text-xs">The 3D model could not be loaded. This might be due to a network restriction or an invalid file.</p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="bg-white text-black px-6 py-2 rounded-full text-xs font-black uppercase"
+                >
+                  Retry Load
+                </button>
+                {debugInfo && (
+                  <p className="text-[10px] text-white/10 break-all mt-4 font-mono">{debugInfo}</p>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="w-16 h-16 border-t-4 border-orange-500 border-solid rounded-full animate-spin mx-auto" />
+                <p className="text-white/60 text-xs font-bold uppercase tracking-widest leading-relaxed">
+                  {!scriptReady ? 'Initializing Engine...' : 'Downloading 3D Model...'}
+                  {showRetry && <span className="block mt-2 text-[10px] text-orange-400 opacity-80">Slow connection detected...</span>}
+                </p>
+                {showRetry && (
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="text-white/40 text-[10px] underline uppercase tracking-tighter"
+                  >
+                    Tap to retry
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
